@@ -58,3 +58,18 @@ async function ensureOffscreen() {
   });
   state.offscreen = true;
 }
+// … (تكملة الملف السابق)
+let frameTimer = null;
+async function tickCapture(tabId) {
+  try {
+    const dataUrl = await chrome.tabs.captureVisibleTab(undefined, { format:'png' });
+    await chrome.runtime.sendMessage({ kind:'frame-dataUrl', dataUrl });
+  } catch (e) {}
+}
+async function startTabCapture(tabId, conf) {
+  if (state.capturing) return;
+  await ensureOffscreen();
+  state.capturing = true;
+  frameTimer && clearInterval(frameTimer);
+  frameTimer = setInterval(()=>tickCapture(tabId), conf.interval || 1000);
+}
