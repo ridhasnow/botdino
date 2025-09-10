@@ -1,0 +1,56 @@
+<!doctype html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Phone View</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, Arial; display:flex; align-items:center; justify-content:center; height:100vh; background:#111; color:#eee; margin:0; }
+    .phone { width: 360px; height: 720px; border: 12px solid #222; border-radius: 24px; background:#000; box-shadow: 0 10px 40px rgba(0,0,0,.5); overflow:hidden; display:flex; flex-direction:column; }
+    header { padding:10px 14px; background:#151515; font-weight:600; }
+    main { flex:1; padding:12px; overflow:auto; }
+    .stat { display:flex; justify-content:space-between; margin:4px 0; font-size:14px; }
+    table { width:100%; border-collapse:collapse; font-size:12px; }
+    th,td { border-bottom:1px solid #222; padding:6px; text-align:center; }
+    .ok { color:#2ee; } .warn{color:#fb4;} .err{color:#f66;}
+  </style>
+</head>
+<body>
+  <div class="phone">
+    <header>Live Results</header>
+    <main>
+      <div id="meta"></div>
+      <div id="quant" style="margin:8px 0; font-size:13px; color:#ccc"></div>
+      <table id="tbl"><thead><tr><th>#</th><th>time</th><th>x</th><th>src</th></tr></thead><tbody></tbody></table>
+    </main>
+  </div>
+  <script>
+    const params = new URLSearchParams(location.search);
+    const sessionId = params.get('session');
+    const base = location.origin;
+    const $ = (q)=>document.querySelector(q);
+    async function load() {
+      if (!sessionId) return;
+      const [summary, last] = await Promise.all([
+        fetch(`${base}/api/summary?sessionId=${encodeURIComponent(sessionId)}`).then(r=>r.json()).catch(()=>({})),
+        fetch(`${base}/api/last?sessionId=${encodeURIComponent(sessionId)}`).then(r=>r.json()).catch(()=>({}))
+      ]);
+      const s = summary?.data || { n:0, stats:{ rows:[], quant:[] } };
+      $('#meta').innerHTML = `
+        <div class="stat"><span>Session</span><span>${sessionId}</span></div>
+        <div class="stat"><span>Samples</span><span>${s.n||0}</span></div>
+        <div class="stat"><span>Mean</span><span>${(s.stats?.mean||0).toFixed?.(2) || '0.00'}x</span></div>
+      `;
+      const q = s.stats?.quant || [];
+      $('#quant').textContent = q.length ? `q50≈${q[0].t}x • q75≈${q[1].t}x • q90≈${q[2].t}x` : '';
+      const tb = $('#tbl tbody'); tb.innerHTML = '';
+      (last?.data||[]).slice().reverse().slice(0,50).forEach((row,i)=>{
+        const tr = document.createElement('tr');
+        tr.innerHTML = `<td>${i+1}</td><td>${new Date(row.ts).toLocaleTimeString()}</td><td>${(row.value||0).toFixed(2)}x</td><td>${row.source}</td>`;
+        tb.appendChild(tr);
+      });
+    }
+    load(); setInterval(load, 1000);
+  </script>
+</body>
+</html>
