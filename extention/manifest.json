@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "Crash Analyst Collector",
+  "version": "1.0.0",
+  "description": "Collects game multipliers from the page (DOM or OCR) and uploads to your server.",
+  "permissions": [
+    "storage",
+    "activeTab",
+    "scripting",
+    "offscreen",
+    "tabCapture"
+  ],
+  "host_permissions": ["*://*/*"],
+  "action": { "default_popup": "popup.html" },
+  "background": { "service_worker": "service_worker.js" },
+  "web_accessible_resources": [
+    { "resources": ["offscreen.html", "tesseract.min.js", "tesseract-core.wasm.js"], "matches": ["*://*/*"] }
+  ]
+}
